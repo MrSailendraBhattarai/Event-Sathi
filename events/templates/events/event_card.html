@@ -1,0 +1,79 @@
+{% load humanize %}
+
+<div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 group flex flex-col h-full">
+    <div class="h-48 bg-gray-200 relative overflow-hidden">
+        {% if event.banner_image %}
+            <img src="{{ event.banner_image.url }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+        {% else %}
+            <div class="flex items-center justify-center h-full text-gray-400 bg-orange-50">
+                <i class="bi bi-image text-4xl"></i>
+            </div>
+        {% endif %}
+        
+        <div class="absolute top-3 left-3 flex flex-col gap-2">
+            {% now "Y-m-d H:i" as current_time %}
+            
+            {% if event.start_date|date:"Y-m-d H:i" > current_time %}
+                {% if "hour" in event.start_date|timeuntil or "minute" in event.start_date|timeuntil %}
+                    <span class="bg-red-600 text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg animate-pulse">
+                        <i class="bi bi-lightning-fill"></i> Starting Soon
+                    </span>
+                {% endif %}
+            
+            {% elif event.end_date and event.end_date|date:"Y-m-d H:i" > current_time %}
+                {% if "hour" in event.end_date|timeuntil or "minute" in event.end_date|timeuntil %}
+                    <span class="bg-amber-500 text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg animate-pulse">
+                        <i class="bi bi-clock-history"></i> Closes Soon
+                    </span>
+                {% else %}
+                    <span class="bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg">
+                        ● Live
+                    </span>
+                {% endif %}
+            
+            {% elif event.start_date|date:"Y-m-d H:i" <= current_time %}
+                <span class="bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg">
+                    ● Live
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="absolute top-3 right-3">
+            <span class="bg-white/95 backdrop-blur px-3 py-1 rounded-full text-sm font-black text-orange-600 shadow-md">
+                {% if event.ticket_price > 0 %}
+                    Rs. {{ event.ticket_price|intcomma }}
+                {% else %}
+                    FREE
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="p-6 flex flex-col flex-grow">
+        <div class="flex justify-between items-start mb-3">
+            <p class="text-orange-600 text-xs font-bold uppercase tracking-wider">
+                {{ event.category.name|default:"General" }}
+            </p>
+            
+            
+        </div>
+        
+        <h3 class="text-xl font-bold mb-2 group-hover:text-orange-600 transition line-clamp-1">
+            {{ event.title }}
+        </h3>
+        
+        <p class="text-gray-500 text-sm mb-4 line-clamp-1">
+            <i class="bi bi-geo-alt text-orange-500 mr-1"></i> {{ event.address }}
+        </p>
+        
+        <div class="mt-auto pt-4 border-t flex justify-between items-center">
+            <span class="text-sm text-gray-600 font-medium">
+                <i class="bi bi-calendar3 text-orange-500 mr-1"></i> {{ event.start_date|date:"M d, Y" }}
+            </span>
+            
+            <a href="{% url 'event_detail' event.id %}" class="text-orange-600 font-bold text-sm flex items-center group-hover:translate-x-1 transition-transform">
+                View Details <i class="bi bi-arrow-right ml-1"></i>
+            </a>
+        </div>
+    </div>
+</div>

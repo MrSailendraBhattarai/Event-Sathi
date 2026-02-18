@@ -1,0 +1,92 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<section class="bg-gray-50 min-h-screen py-12">
+    <div class="max-w-7xl mx-auto px-4">
+        
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
+            <div class="flex-shrink-0">
+                <h1 class="text-3xl font-black text-gray-900">Explore Events</h1>
+                <p class="text-gray-500 mt-1">Find the best experiences across Nepal.</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+                {% if request.GET.search or request.GET.category or request.GET.date_filter or request.GET.min_price or request.GET.max_price %}
+                <span class="text-xs font-bold uppercase text-gray-400 mr-2">Filters Active</span>
+                <a href="{% url 'explore' %}" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-50 text-orange-600 hover:bg-orange-100 transition shadow-sm border border-orange-100 text-sm font-bold">
+                    <i class="bi bi-arrow-counterclockwise"></i> Clear All
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            
+            <aside class="lg:col-span-1 space-y-6">
+                <form method="GET" action="{% url 'explore' %}" class="space-y-6">
+                    <input type="hidden" name="search" value="{{ request.GET.search|default:'' }}">
+                    <input type="hidden" name="category" value="{{ request.GET.category|default:'' }}">
+                    <input type="hidden" name="sort" value="{{ request.GET.sort|default:'' }}">
+
+                    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+                        <h3 class="font-bold text-gray-800 flex items-center text-sm">
+                            <i class="bi bi-calendar-event mr-2 text-orange-600"></i> Date
+                        </h3>
+                        <div class="flex flex-col gap-2">
+                            {% with d_filter=request.GET.date_filter %}
+                            <a href="?search={{ request.GET.search|default:'' }}&category={{ request.GET.category|default:'' }}&date_filter=" 
+                               class="px-4 py-2 rounded-xl text-sm {% if not d_filter %}bg-orange-600 text-white font-bold shadow-md shadow-orange-200{% else %}text-gray-600 hover:bg-orange-50{% endif %} transition text-center">
+                                Anytime
+                            </a>
+                            <a href="?search={{ request.GET.search|default:'' }}&category={{ request.GET.category|default:'' }}&date_filter=today" 
+                               class="px-4 py-2 rounded-xl text-sm {% if d_filter == 'today' %}bg-orange-600 text-white font-bold shadow-md shadow-orange-200{% else %}text-gray-600 hover:bg-orange-50{% endif %} transition text-center">
+                                Today
+                            </a>
+                            <a href="?search={{ request.GET.search|default:'' }}&category={{ request.GET.category|default:'' }}&date_filter=weekend" 
+                               class="px-4 py-2 rounded-xl text-sm {% if d_filter == 'weekend' %}bg-orange-600 text-white font-bold shadow-md shadow-orange-200{% else %}text-gray-600 hover:bg-orange-50{% endif %} transition text-center">
+                                This Weekend
+                            </a>
+                            {% endwith %}
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+                        <h3 class="font-bold text-gray-800 flex items-center text-sm">
+                            <i class="bi bi-tags mr-2 text-orange-600"></i> Price (Rs.)
+                        </h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="number" name="min_price" value="{{ request.GET.min_price }}" placeholder="Min" 
+                                   class="w-full border-none bg-gray-50 rounded-xl py-2 px-3 text-sm focus:ring-orange-500">
+                            <input type="number" name="max_price" value="{{ request.GET.max_price }}" placeholder="Max" 
+                                   class="w-full border-none bg-gray-50 rounded-xl py-2 px-3 text-sm focus:ring-orange-500">
+                        </div>
+                        <button type="submit" class="w-full bg-gray-900 text-white py-3 rounded-2xl font-bold text-sm hover:bg-black transition shadow-lg">
+                            Apply Price Range
+                        </button>
+                        
+                        <a href="?max_price=0&search={{ request.GET.search|default:'' }}&category={{ request.GET.category|default:'' }}" 
+                           class="block text-center w-full py-2 rounded-xl text-xs font-bold border border-green-100 bg-green-50 text-green-700 hover:bg-green-100 transition">
+                            Show Only Free Events
+                        </a>
+                    </div>
+                </form>
+            </aside>
+
+            <main class="lg:col-span-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {% for event in events %}
+                        {% include 'events/event_card.html' %}
+                    {% empty %}
+                        <div class="col-span-full text-center py-32 bg-white rounded-3xl border-2 border-dashed border-gray-100">
+                            <i class="bi bi-calendar-x text-5xl text-gray-200 mb-4 block"></i>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">No matching events</h3>
+                            <p class="text-gray-500">Try changing your search in the navbar or adjusting price filters.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </main>
+
+        </div>
+    </div>
+</section>
+{% endblock %}

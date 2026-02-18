@@ -1,0 +1,123 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<section class="bg-gray-50 min-h-screen py-10">
+    <div class="max-w-7xl mx-auto px-4">
+        
+        <div class="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
+            <div>
+                <h1 class="text-3xl font-black text-gray-900">Organizer Dashboard</h1>
+                <p class="text-gray-500">Welcome back, {{ user.username }}. Manage your events here.</p>
+            </div>
+            <a href="{% url 'create_event' %}" class="bg-orange-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-orange-700 transition shadow-lg flex items-center">
+                <i class="bi bi-plus-lg mr-2"></i> Create New Event
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs font-black uppercase text-gray-400 tracking-widest">Total Hosted</p>
+                    <i class="bi bi-calendar-event text-gray-300 text-xl"></i>
+                </div>
+                <h2 class="text-4xl font-black text-gray-900">{{ stats.total }}</h2>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs font-black uppercase text-green-500 tracking-widest">Live & Approved</p>
+                    <i class="bi bi-check-circle-fill text-green-100 text-xl"></i>
+                </div>
+                <h2 class="text-4xl font-black text-gray-900">{{ stats.approved }}</h2>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs font-black uppercase text-orange-500 tracking-widest">Under Review</p>
+                    <i class="bi bi-hourglass-split text-orange-100 text-xl"></i>
+                </div>
+                <h2 class="text-4xl font-black text-gray-900">{{ stats.pending }}</h2>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-gray-50 flex justify-between items-center">
+                <h3 class="font-bold text-gray-900 text-lg">Your Posted Events</h3>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 text-gray-400 text-xs font-black uppercase">
+                        <tr>
+                            <th class="px-6 py-4">Event Details</th>
+                            <th class="px-6 py-4">Date & Time</th>
+                            <th class="px-6 py-4">Status</th>
+                            <th class="px-6 py-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        {% for event in events %}
+                        <tr class="hover:bg-gray-50 transition group">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-4">
+                                    {% if event.banner_image %}
+                                        <img src="{{ event.banner_image.url }}" class="w-14 h-14 rounded-xl object-cover shadow-sm">
+                                    {% else %}
+                                        <div class="w-14 h-14 bg-gray-100 rounded-xl flex items-center justify-center">
+                                            <i class="bi bi-image text-gray-300 text-xl"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <p class="font-bold text-gray-900 group-hover:text-orange-600 transition">{{ event.title }}</p>
+                                        <p class="text-xs text-gray-400">{{ event.category.name }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <p class="text-sm font-semibold text-gray-700">{{ event.start_date|date:"D, M d" }}</p>
+                                <p class="text-xs text-gray-400">{{ event.start_date|date:"P" }}</p>
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if event.is_approved %}
+                                    <span class="inline-flex items-center px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase tracking-wider">
+                                        <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-2 animate-pulse"></span> Live
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-[10px] font-black uppercase tracking-wider">
+                                        <span class="w-1.5 h-1.5 bg-orange-500 rounded-full mr-2"></span> Pending
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex justify-end gap-2">
+                                    <a href="{% url 'edit_event' event.id %}" class="p-2 bg-gray-50 hover:bg-orange-50 text-gray-400 hover:text-orange-600 rounded-xl transition" title="Edit">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    
+                                    <form method="POST" action="{% url 'delete_event' event.id %}" 
+                                          onsubmit="return confirm('Wait! Are you sure you want to delete this event permanently?');" 
+                                          class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="p-2 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-xl transition" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-6 py-24 text-center">
+                                <div class="flex flex-col items-center">
+                                    <i class="bi bi-calendar-x text-5xl text-gray-200 mb-4"></i>
+                                    <p class="text-gray-400 font-medium">No events found in your account.</p>
+                                    <a href="{% url 'create_event' %}" class="text-orange-600 font-bold mt-2 hover:underline">Start by posting one!</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

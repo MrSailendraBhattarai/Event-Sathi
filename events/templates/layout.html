@@ -1,0 +1,209 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event-Sathi | हरेक कार्यक्रमको साथी</title>
+    
+    <link rel="icon" type="image/png" href="{% static 'events/images/logo.png' %}">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    
+    <style>
+        .custom-shadow { box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.1); }
+        #map { border-radius: 12px; z-index: 1; }
+        .logo-hover { transition: transform 0.3s ease; }
+        .logo-hover:hover { transform: scale(1.05); }
+        
+        /* Smooth transition for the heart icon */
+        .interest-btn i { transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .interest-btn:active i { transform: scale(1.5); }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-900">
+
+   <nav class="bg-white border-b sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16 items-center">
+            
+            <div class="flex items-center">
+                <a href="{% url 'home' %}" class="flex items-center gap-2 logo-hover">
+                    <img src="{% static 'events/images/logo.png' %}" alt="Event-Sathi Logo" class="h-20 w-auto">
+                </a>
+            </div>
+
+            <div class="hidden md:flex space-x-6 items-center">
+                <form method="GET" action="{% url 'explore' %}" class="hidden lg:flex items-center bg-gray-100 px-3 py-1.5 rounded-2xl border border-gray-200 gap-2">
+                    <div class="relative">
+                        <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                        <input type="text" name="search" value="{{ request.GET.search|default:'' }}" placeholder="Search..." 
+                               class="pl-8 pr-2 py-1 bg-transparent border-none text-sm focus:ring-0 w-32 xl:w-48 outline-none">
+                    </div>
+                    <div class="h-6 w-px bg-gray-300"></div>
+                    <select name="category" class="bg-transparent border-none text-xs font-semibold text-gray-600 focus:ring-0 py-1 cursor-pointer outline-none">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}" {% if request.GET.category == cat.id|stringformat:"i" %}selected{% endif %}>
+                                {{ cat.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="bg-orange-600 text-white p-1.5 rounded-xl hover:bg-orange-700 transition ml-1">
+                        <i class="bi bi-arrow-right-short text-lg leading-none"></i>
+                    </button>
+                </form>
+
+                <a href="{% url 'explore' %}" 
+                   class="{% if request.resolver_match.url_name == 'explore' %}text-orange-600 font-bold{% else %}text-gray-600 hover:text-orange-600{% endif %} font-medium transition">
+                    Explore
+                </a>
+                
+                {% if user.is_authenticated and user.userprofile.role == 'organizer' %}
+                    <a href="{% url 'create_event' %}" 
+                       class="{% if request.resolver_match.url_name == 'create_event' %}bg-orange-800 ring-2 ring-orange-300{% else %}bg-orange-600{% endif %} text-white px-5 py-2 rounded-full font-bold hover:bg-orange-700 transition shadow-md">
+                        <i class="bi bi-plus-circle-fill mr-1"></i> Post an Event
+                    </a>
+                {% endif %}
+
+                {% if user.is_authenticated %}
+                    <div class="flex items-center space-x-4 border-l pl-6 ml-2">
+                        
+                        <div class="relative group">
+                            <button class="flex items-center text-gray-400 hover:text-orange-600 transition p-1 relative">
+                                <i class="bi bi-bell text-xl"></i>
+                                {% if unread_notifications_count > 0 %}
+                                    <span class="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white"></span>
+                                {% endif %}
+                            </button>
+
+                            <div class="absolute right-0 mt-2 w-72 bg-white border border-gray-100 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
+                                <div class="p-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                                    <h4 class="text-xs font-black uppercase text-gray-400 tracking-widest">Notifications</h4>
+                                    {% if unread_notifications_count > 0 %}
+                                        <a href="{% url 'mark_notifications_read' %}" class="text-[10px] font-bold text-orange-600 hover:underline">Mark all read</a>
+                                    {% endif %}
+                                </div>
+                                <div class="max-h-64 overflow-y-auto">
+                                    {% for note in notifications %}
+                                        <div class="p-4 border-b border-gray-50 last:border-0 {% if not note.is_read %}bg-orange-50/30{% endif %}">
+                                            <p class="text-xs text-gray-800 {% if not note.is_read %}font-bold{% endif %}">{{ note.message }}</p>
+                                            <p class="text-[10px] text-gray-400 mt-1">{{ note.created_at|timesince }} ago</p>
+                                        </div>
+                                    {% empty %}
+                                        <div class="p-8 text-center">
+                                            <i class="bi bi-bell-slash text-2xl text-gray-200"></i>
+                                            <p class="text-xs text-gray-400 mt-2">No notifications yet</p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <a href="{% if user.userprofile.role == 'organizer' %}{% url 'organizer_dashboard' %}{% else %}#{% endif %}" class="block p-3 text-center text-xs font-bold text-gray-500 hover:bg-gray-50 transition border-t border-gray-50">
+                                    View Activity
+                                </a>
+                            </div>
+                        </div>
+
+                        <a href="{% if user.userprofile.role == 'organizer' %}{% url 'organizer_dashboard' %}{% else %}{% url 'user_profile' %}{% endif %}" 
+                           class="flex items-center space-x-2 text-gray-700 group transition"
+                           title="{% if user.userprofile.role == 'organizer' %}Dashboard{% else %}My Interests{% endif %}">
+                            <i class="bi bi-person-circle text-xl text-orange-600 group-hover:scale-110 transition"></i>
+                            <div class="flex flex-col leading-tight">
+                                <span class="font-bold text-sm group-hover:text-orange-600 transition">{{ user.username }}</span>
+                                <span class="text-[10px] uppercase text-gray-400 font-black tracking-widest">{{ user.userprofile.role }}</span>
+                            </div>
+                        </a>
+
+                        <form method="post" action="{% url 'logout' %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="text-gray-400 hover:text-red-500 transition" title="Logout">
+                                <i class="bi bi-box-arrow-right text-lg"></i>
+                            </button>
+                        </form>
+                    </div>
+                {% else %}
+                    <div class="flex items-center space-x-4 ml-4">
+                        <a href="{% url 'login' %}" class="text-gray-600 hover:text-orange-600 font-bold transition">Login</a>
+                        <a href="{% url 'register' %}" class="bg-gray-100 text-gray-900 px-5 py-2 rounded-full font-bold hover:bg-gray-200 transition">Sign Up</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main>
+    <div class="max-w-7xl mx-auto px-4 mt-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="flex items-center p-4 mb-4 rounded-2xl shadow-lg border 
+                    {% if message.tags == 'success' %} bg-green-50 text-green-700 border-green-200 
+                    {% elif message.tags == 'error' %} bg-red-50 text-red-700 border-red-200 
+                    {% else %} bg-blue-50 text-blue-700 border-blue-200 {% endif %}">
+                    
+                    <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% else %}bi-info-circle-fill{% endif %} mr-3 text-xl"></i>
+                    <span class="font-bold">{{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="bg-gray-900 text-gray-400 py-12 mt-20">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-2 grayscale brightness-200 opacity-50">
+                <img src="{% static 'events/images/logo.png' %}" alt="Logo" class="h-8 w-auto">
+                <span class="text-lg font-bold text-white">Event-Sathi</span>
+            </div>
+            <p class="text-sm">&copy; 2026 Event-Sathi. Built for Nepal.</p>
+            <div class="flex space-x-4 text-xl">
+                <a href="#" class="hover:text-white"><i class="bi bi-facebook"></i></a>
+                <a href="#" class="hover:text-white"><i class="bi bi-instagram"></i></a>
+                <a href="#" class="hover:text-white"><i class="bi bi-twitter-x"></i></a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+    // Global function for handling "Interested" toggle
+    function toggleInterest(btn, eventId) {
+        {% if not user.is_authenticated %}
+            window.location.href = "{% url 'login' %}";
+            return;
+        {% endif %}
+
+        fetch(`/toggle-interest/${eventId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const icon = btn.querySelector('i');
+            const countSpan = btn.querySelector('.interest-count');
+            
+            if(countSpan) countSpan.innerText = data.count;
+
+            if (data.is_interested) {
+                btn.classList.add('text-orange-600');
+                btn.classList.remove('text-gray-400');
+                icon.classList.replace('bi-heart', 'bi-heart-fill');
+            } else {
+                btn.classList.remove('text-orange-600');
+                btn.classList.add('text-gray-400');
+                icon.classList.replace('bi-heart-fill', 'bi-heart');
+            }
+        })
+        .catch(err => console.error('Error:', err));
+    }
+</script>
+</body>
+</html>

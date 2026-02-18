@@ -1,0 +1,88 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="min-h-[80vh] flex items-center justify-center py-12 px-4 bg-gray-50">
+    <div class="max-w-md w-full bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+        
+        <div class="flex bg-gray-100 p-1 rounded-2xl mb-8">
+            <button onclick="switchTab('user')" id="user-tab" class="flex-1 py-2 text-sm font-bold rounded-xl transition bg-white text-orange-600 shadow-sm">
+                <i class="bi bi-person-fill mr-2"></i>User
+            </button>
+            <button onclick="switchTab('organizer')" id="org-tab" class="flex-1 py-2 text-sm font-bold rounded-xl transition text-gray-500 hover:text-gray-700">
+                <i class="bi bi-megaphone-fill mr-2"></i>Organizer
+            </button>
+        </div>
+
+        <div class="text-center mb-8">
+            <h2 id="login-title" class="text-3xl font-black text-gray-900">User Login</h2>
+            <p id="login-subtitle" class="text-gray-500 mt-2">Access your tickets and saved events</p>
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+                <div class="p-3 rounded-xl bg-red-50 text-red-700 text-sm font-bold">
+                    Invalid username or password.
+                </div>
+            {% endif %}
+
+            <div>
+                <label class="block text-xs font-bold uppercase text-gray-400 mb-2 ml-1">Username</label>
+                <input type="text" name="username" required 
+                       class="w-full border-gray-100 bg-gray-50 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none transition">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase text-gray-400 mb-2 ml-1">Password</label>
+                <input type="password" name="password" required 
+                       class="w-full border-gray-100 bg-gray-50 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none transition">
+            </div>
+
+            <button type="submit" class="w-full bg-orange-600 text-white py-3 rounded-2xl font-bold hover:bg-orange-700 transition shadow-lg shadow-orange-100">
+                Sign In to <span id="btn-text">User</span> Account
+            </button>
+        </form>
+
+        <div class="mt-8 text-center pt-6 border-t border-gray-50">
+            <p class="text-gray-500 text-sm">Don't have an account? 
+                <a href="{% url 'register' %}" class="text-orange-600 font-bold hover:underline">Create Account</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(role) {
+        const userTab = document.getElementById('user-tab');
+        const orgTab = document.getElementById('org-tab');
+        const title = document.getElementById('login-title');
+        const subtitle = document.getElementById('login-subtitle');
+        const btnText = document.getElementById('btn-text');
+
+        if (role === 'organizer') {
+            // Update Tab UI
+            orgTab.classList.add('bg-white', 'text-orange-600', 'shadow-sm');
+            orgTab.classList.remove('text-gray-500');
+            userTab.classList.remove('bg-white', 'text-orange-600', 'shadow-sm');
+            userTab.classList.add('text-gray-500');
+            
+            // Update Text
+            title.innerText = "Organizer Portal";
+            subtitle.innerText = "Manage your events and dashboard";
+            btnText.innerText = "Organizer";
+        } else {
+            // Update Tab UI
+            userTab.classList.add('bg-white', 'text-orange-600', 'shadow-sm');
+            userTab.classList.remove('text-gray-500');
+            orgTab.classList.remove('bg-white', 'text-orange-600', 'shadow-sm');
+            orgTab.classList.add('text-gray-500');
+
+            // Update Text
+            title.innerText = "User Login";
+            subtitle.innerText = "Access your tickets and saved events";
+            btnText.innerText = "User";
+        }
+    }
+</script>
+{% endblock %}

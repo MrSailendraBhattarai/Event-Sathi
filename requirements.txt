@@ -1,0 +1,11 @@
+# Web Framework
+django>=5.0
+
+# Image Handling (Needed for Event Banner Images)
+pillow
+
+# Date and Number Formatting (Used for Prices and Dates)
+django-humanize
+
+# Environment and Security (Optional but recommended)
+python-dotenv
