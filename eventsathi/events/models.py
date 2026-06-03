@@ -38,9 +38,12 @@ class Event(models.Model):
     registration_end = models.DateTimeField(blank=True, null=True)
     venue = models.CharField(max_length=300)
     city = models.CharField(max_length=100)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     is_virtual = models.BooleanField(default=False)
     virtual_link = models.URLField(blank=True)
     max_capacity = models.PositiveIntegerField(default=100)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='published')
     is_featured = models.BooleanField(default=False)
     tags = models.CharField(max_length=500, blank=True)
@@ -53,11 +56,30 @@ class Event(models.Model):
     def __str__(self):
         return self.title
 
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if not is_new:
+            # Sync default ticket tier (General Admission) or single active tier
+            tier = self.ticket_tiers.filter(name='General Admission').first()
+            if not tier:
+                if self.ticket_tiers.count() == 1:
+                    tier = self.ticket_tiers.first()
+            if tier:
+                tier.price = self.price or 0.00
+                tier.capacity = self.max_capacity
+                tier.save()
+
     def get_registered_count(self):
         return self.registrations.filter(status='confirmed').count()
 
     def get_available_seats(self):
+        if self.max_capacity == 0:
+            return float('inf')
         return self.max_capacity - self.get_registered_count()
+
+    def is_unlimited_capacity(self):
+        return self.max_capacity == 0
 
     def is_registration_open(self):
         return self.status == 'published' and self.start_date > timezone.now()
@@ -70,7 +92,7 @@ class Event(models.Model):
     def get_min_price(self):
         tiers = self.ticket_tiers.filter(is_active=True)
         if not tiers.exists():
-            return None
+            return self.price or 0.00
         prices = [t.price for t in tiers]
         return min(prices)
 
@@ -129,7 +151,7 @@ class Registration(models.Model):
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     class Meta:
-        unique_together = ('user', 'event')
+        ordering = ['-registered_at']
 
     def __str__(self):
         return f"{self.user.username} - {self.event.title}"
@@ -213,6 +235,19 @@ class FavoriteSession(models.Model):
 
     class Meta:
         unique_together = ('user', 'session')
+
+
+class FavoriteEvent(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorite_events')
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='favorited_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'event')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.event.title}"
+
 
 
 class Sponsor(models.Model):
@@ -311,3 +346,31 @@ class QAQuestion(models.Model):
 
     def upvote_count(self):
         return self.upvotes.count()
+
+
+class Payment(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('refunded', 'Refunded'),
+    ]
+    
+    PAYMENT_METHOD_CHOICES = [
+        ('khalti', 'Khalti'),
+        ('esewa', 'eSewa'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
+    registration = models.OneToOneField(Registration, on_delete=models.CASCADE, related_name='payment', null=True, blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='khalti')
+    pidx = models.CharField(max_length=255, unique=True, null=True, blank=True)  # Khalti-specific
+    transaction_uuid = models.CharField(max_length=255, unique=True, null=True, blank=True)  # eSewa-specific
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    transaction_id = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Payment {self.id} - {self.user.username} - {self.payment_method} - {self.status}"

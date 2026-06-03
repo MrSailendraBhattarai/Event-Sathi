@@ -6,7 +6,6 @@ class UserProfile(models.Model):
     ROLE_CHOICES = [
         ('attendee', 'Attendee'),
         ('organizer', 'Organizer'),
-        ('speaker', 'Speaker'),
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='attendee')
@@ -19,6 +18,8 @@ class UserProfile(models.Model):
     twitter = models.URLField(blank=True)
     website = models.URLField(blank=True)
     interests = models.TextField(blank=True, help_text='Comma-separated interests')
+    must_change_password = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -28,6 +29,24 @@ class UserProfile(models.Model):
         if self.interests:
             return [i.strip() for i in self.interests.split(',') if i.strip()]
         return []
+
+
+class EmailVerificationCode(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='verification_codes')
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.code}"
+
+
+class PasswordResetCode(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='password_reset_codes')
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.code}"
 
 
 class NetworkConnection(models.Model):

@@ -6,19 +6,28 @@ Reusable event card. Expects:
 {% with live_status=event.get_live_status min_price=event.get_min_price %}
 <div class="card event-card h-100" style="position:relative;overflow:hidden;">
 
+    <!-- Featured banner -->
+    {% if event.is_featured %}
+    <div style="position:absolute;top:0;left:0;right:0;z-index:20;background:linear-gradient(90deg,#f59e0b,#fbbf24);padding:6px 12px;text-align:center;">
+        <span class="fw-bold" style="color:#0f172a;font-size:0.75rem;letter-spacing:1px;">FEATURED EVENT</span>
+    </div>
+    {% endif %}
+
     <!-- Price badge — top right -->
-    <div style="position:absolute;top:12px;right:12px;z-index:10;">
+    <div style="position:absolute;{% if event.is_featured %}top:40px{% else %}top:12px{% endif %};right:12px;z-index:10;">
         {% if min_price is not None %}
             {% if min_price == 0 %}
             <span class="badge px-3 py-2 fw-bold" style="background:rgba(16,185,129,0.92);color:#fff;font-size:0.8rem;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,0.35);">FREE</span>
             {% else %}
-            <span class="badge px-3 py-2 fw-bold" style="background:rgba(15,15,30,0.88);color:#fbbf24;border:1px solid rgba(245,158,11,0.4);font-size:0.8rem;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,0.35);">₹{{ min_price|floatformat:0 }}</span>
+            <span class="badge px-3 py-2 fw-bold" style="background:rgba(15,15,30,0.88);color:#fbbf24;border:1px solid rgba(245,158,11,0.4);font-size:0.8rem;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,0.35);">Rs{{ min_price|floatformat:0 }}</span>
             {% endif %}
         {% endif %}
     </div>
 
+
+
     <!-- Status badge — top left (over image) -->
-    <div style="position:absolute;top:12px;left:12px;z-index:10;">
+    <div style="position:absolute;{% if event.is_featured %}top:40px{% else %}top:12px{% endif %};left:12px;z-index:10;">
         {% if live_status == 'live' %}
         <span class="badge px-2 py-1" style="background:rgba(239,68,68,0.9);color:#fff;font-size:0.7rem;border-radius:20px;">
             <span class="d-inline-block rounded-circle bg-white me-1" style="width:6px;height:6px;animation:pulse 1.2s infinite;"></span>LIVE
@@ -36,9 +45,9 @@ Reusable event card. Expects:
 
     <!-- Banner / Placeholder -->
     {% if event.banner %}
-    <img src="{{ event.banner.url }}" class="card-img-top" alt="{{ event.title }}" style="height:160px;object-fit:cover;">
+    <img src="{{ event.banner.url }}" class="card-img-top" alt="{{ event.title }}" style="height:{% if event.is_featured %}130px{% else %}160px{% endif %};object-fit:cover;">
     {% else %}
-    <div class="event-card-placeholder" style="height:160px;">
+    <div class="event-card-placeholder" style="height:{% if event.is_featured %}130px{% else %}160px{% endif %};">
         <i class="bi bi-calendar-event fs-1"></i>
     </div>
     {% endif %}
@@ -51,7 +60,27 @@ Reusable event card. Expects:
             {% if event.is_featured %}<span class="badge" style="background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);font-size:0.7rem;"><i class="bi bi-star-fill"></i></span>{% endif %}
         </div>
 
-        <h6 class="fw-bold mb-1 lh-sm">{{ event.title }}</h6>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h6 class="fw-bold mb-0 lh-sm flex-grow-1">{{ event.title }}</h6>
+            {% if user.is_authenticated %}
+            <form action="{% url 'toggle_favorite_event' event.slug %}" method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm p-0 d-flex align-items-center justify-content-center" 
+                        style="width:24px;height:24px;background:transparent;border:none;color:{% if event.id in favorite_event_ids %}#fbbf24{% else %}#94a3b8{% endif %};transition:all 0.2s;"
+                        onmouseover="this.style.transform='scale(1.2)';" onmouseout="this.style.transform='scale(1)';"
+                        title="{% if event.id in favorite_event_ids %}Remove from Interests{% else %}Add to Interests{% endif %}">
+                    <i class="bi bi-star{% if event.id in favorite_event_ids %}-fill{% endif %}" style="font-size:1rem;"></i>
+                </button>
+            </form>
+            {% else %}
+            <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-sm p-0 d-flex align-items-center justify-content-center" 
+               style="width:24px;height:24px;background:transparent;border:none;color:#94a3b8;transition:all 0.2s;"
+               onmouseover="this.style.transform='scale(1.2)';" onmouseout="this.style.transform='scale(1)';"
+               title="Login to Add to Interests">
+                <i class="bi bi-star" style="font-size:1rem;"></i>
+            </a>
+            {% endif %}
+        </div>
 
         <div class="d-flex flex-column gap-1 mt-1 mb-3">
             <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>{{ event.start_date|date:"d M Y, g:i A" }}</small>
@@ -60,6 +89,12 @@ Reusable event card. Expects:
 
         <!-- Capacity bar -->
         <div class="mb-3">
+            {% if event.max_capacity == 0 %}
+            <div class="d-flex justify-content-between mb-1">
+                <small class="text-muted" style="font-size:0.7rem;">{{ event.get_registered_count }} registered</small>
+                <small style="font-size:0.7rem;color:#22d3ee;"><i class="bi bi-infinity me-1"></i>Unlimited seats</small>
+            </div>
+            {% else %}
             <div class="d-flex justify-content-between mb-1">
                 <small class="text-muted" style="font-size:0.7rem;">{{ event.get_registered_count }} registered</small>
                 <small class="text-muted" style="font-size:0.7rem;">{{ event.get_available_seats }} left</small>
@@ -67,6 +102,7 @@ Reusable event card. Expects:
             <div class="progress" style="height:3px;background:rgba(255,255,255,0.08);">
                 <div class="progress-bar" style="width:{% widthratio event.get_registered_count event.max_capacity 100 %}%;background:var(--es-primary);"></div>
             </div>
+            {% endif %}
         </div>
 
         <a href="{% url 'event_detail' event.slug %}" class="btn btn-primary btn-sm w-100 mt-auto">

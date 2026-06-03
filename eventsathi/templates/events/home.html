@@ -99,7 +99,7 @@
                     </a>
                     {% else %}
                     {% with profile=user.profile %}
-                    {% if profile.role == 'organizer' or user.is_staff %}
+                    {% if profile.role == 'organizer' %}
                     <a href="{% url 'event_create' %}" class="btn btn-warning btn-lg px-5 py-3">
                         <i class="bi bi-plus-circle me-2"></i>Post Event
                     </a>

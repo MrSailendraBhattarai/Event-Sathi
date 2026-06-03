@@ -8,3 +8,4 @@ django-crispy-forms==2.6
 crispy-bootstrap5==2026.3
 django-widget-tweaks==1.5.1
 python-decouple==3.8
+requests==2.32.3

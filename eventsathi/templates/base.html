@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,44 +11,120 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     {% block extra_css %}{% endblock %}
     <!-- Apply saved theme before first paint to avoid flash -->
-    <script>(function(){var t=localStorage.getItem('es-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+    <script>(function(){var t=localStorage.getItem('es-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark sticky-top" id="mainNav">
+<nav class="navbar navbar-expand-md" id="mainNav">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="{% url 'home' %}">
-            <i class="bi bi-calendar-event-fill me-2 text-warning"></i>EventSathi
+        <a class="navbar-brand fw-bold d-flex flex-column align-items-center" href="{% url 'home' %}">
+            <img src="{% static 'images/logo.png' %}" alt="EventSathi" style="height: 45px; width: auto;">
+            <span style="color: #f97316; font-size: 0.85rem; margin-top: 2px;">EventSathi</span>
         </a>
+        
         <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
+            {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.is_superuser %}
+            {# ===== ADMIN-ONLY NAVBAR ===== #}
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link text-warning fw-semibold" href="{% url 'admin_dashboard' %}"><i class="bi bi-shield-shaded me-1"></i>Admin Panel</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ms-auto align-items-center">
+                <!-- Search Icon Button -->
+                <li class="nav-item me-1 d-md-none d-lg-none">
+                    <button class="btn border-0" type="button" id="mobileSearchBtn" style="color: var(--es-text);">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </li>
+                <li class="nav-item me-1 d-none d-md-inline">
+                    <button class="btn border-0" type="button" id="desktopSearchBtn" style="color: var(--es-text);">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </li>
+                <li class="nav-item dropdown me-1">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown">
+                        {% with profile=user.profile %}
+                        {% if profile.photo %}
+                        <img src="{{ profile.photo.url }}" class="avatar-sm" style="object-fit:cover;" alt="">
+                        {% else %}
+                        <div class="avatar-sm" style="background:rgba(239,68,68,0.25);color:#f87171;">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</div>
+                        {% endif %}
+                        {% endwith %}
+                        <span>{{ user.first_name }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                        <li>
+                            <div class="px-3 py-2 border-bottom" style="border-color:var(--es-border)!important;">
+                                <small class="text-muted d-block">Signed in as</small>
+                                <span class="fw-semibold small text-white">{{ user.first_name }} {{ user.last_name }}</span>
+                                <span class="badge ms-1" style="font-size:0.6rem;background:rgba(239,68,68,0.3);color:#f87171;">Admin</span>
+                            </div>
+                        </li>
+                        <li><a class="dropdown-item text-warning" href="{% url 'admin_dashboard' %}"><i class="bi bi-shield-shaded me-2"></i>Admin Panel</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <button class="theme-toggle border-0" id="themeToggle" title="Toggle light/dark mode">
+                        <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+                    </button>
+                </li>
+            </ul>
+            {% else %}
+            {# ===== REGULAR USER NAVBAR ===== #}
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'event_list' %}"><i class="bi bi-grid-3x3-gap me-1"></i>Events</a>
                 </li>
                 {% if user.is_authenticated %}
+                {% with profile=user.profile %}
+                {% if profile.role == 'organizer' %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'my_events' %}"><i class="bi bi-calendar-check me-1"></i>My Events</a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'my_tickets' %}"><i class="bi bi-ticket-perforated me-1"></i>My Tickets</a>
                 </li>
+                {% else %}
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'network_hub' %}"><i class="bi bi-people me-1"></i>Network</a>
+                    <a class="nav-link" href="{% url 'my_tickets' %}"><i class="bi bi-ticket-perforated me-1"></i>My Tickets</a>
+                </li>
+                {% endif %}
+                {% endwith %}
+                <li class="nav-item">
+                    <a class="nav-link position-relative" href="{% url 'network_hub' %}">
+                        <i class="bi bi-people me-1"></i>Network
+                        {% if pending_connection_count > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background:var(--es-primary);font-size:0.6rem;padding:0.2rem 0.4rem;">
+                                {{ pending_connection_count }}
+                            </span>
+                        {% endif %}
+                    </a>
                 </li>
                 {% endif %}
             </ul>
             <ul class="navbar-nav ms-auto align-items-center">
-                <!-- Theme toggle -->
-                <li class="nav-item me-1">
-                    <button class="theme-toggle border-0" id="themeToggle" title="Toggle light/dark mode">
-                        <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+                <!-- Search Icon Button -->
+                <li class="nav-item me-1 d-md-none d-lg-none">
+                    <button class="btn border-0" type="button" id="mobileSearchBtn" style="color: var(--es-text);">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </li>
+                <li class="nav-item me-1 d-none d-md-inline">
+                    <button class="btn border-0" type="button" id="desktopSearchBtn" style="color: var(--es-text);">
+                        <i class="bi bi-search"></i>
                     </button>
                 </li>
                 {% if user.is_authenticated %}
                 {% with profile=user.profile %}
-                {% if profile.role == 'organizer' or user.is_staff %}
+                {% if profile.role == 'organizer' %}
                 <li class="nav-item me-2">
-                    <a class="btn btn-warning btn-sm px-3 fw-semibold" href="{% url 'event_create' %}">
+                    <a class="btn btn-sm px-3 fw-semibold post-event-btn" href="{% url 'event_create' %}" style="color: white !important;">
                         <i class="bi bi-plus-circle me-1"></i>Post Event
                     </a>
                 </li>
@@ -59,26 +135,40 @@
                         <i class="bi bi-chat-dots fs-5"></i>
                     </a>
                 </li>
-                <li class="nav-item dropdown">
+                <li class="nav-item dropdown me-1">
                     <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown">
+                        {% with profile=user.profile %}
+                        {% if profile.photo %}
+                        <img src="{{ profile.photo.url }}" class="avatar-sm" style="object-fit:cover;" alt="">
+                        {% else %}
                         <div class="avatar-sm">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</div>
-                        <span>{{ user.first_name|default:user.username }}</span>
+                        {% endif %}
+                        {% endwith %}
+                        <span>{{ user.first_name }}</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0">
                         <li>
                             <div class="px-3 py-2 border-bottom" style="border-color:var(--es-border)!important;">
                                 <small class="text-muted d-block">Signed in as</small>
-                                <span class="fw-semibold small text-white">{{ user.get_full_name|default:user.username }}</span>
-                                <span class="badge ms-1" style="font-size:0.6rem;background:rgba(108,61,225,0.3);color:#a78bfa;">{% with profile=user.profile %}{{ profile.role|title }}{% endwith %}</span>
+                                <span class="fw-semibold small text-white">{{ user.first_name }} {{ user.last_name }}</span>
+                                <span class="badge ms-1" style="font-size:0.6rem;background:rgba(108,61,225,0.3);color:#a78bfa;">
+                    {% if user.is_staff or user.is_superuser %}
+                        Admin
+                    {% else %}
+                        {% with profile=user.profile %}{{ profile.role|title }}{% endwith %}
+                    {% endif %}
+                </span>
                             </div>
                         </li>
                         <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="bi bi-person me-2"></i>My Profile</a></li>
-                        <li><a class="dropdown-item" href="{% url 'my_tickets' %}"><i class="bi bi-ticket-perforated me-2"></i>My Tickets</a></li>
-                        <li><a class="dropdown-item" href="{% url 'my_events' %}"><i class="bi bi-calendar-check me-2"></i>My Events</a></li>
                         {% with profile=user.profile %}
-                        {% if profile.role == 'organizer' or user.is_staff %}
+                        {% if profile.role == 'organizer' %}
+                        <li><a class="dropdown-item" href="{% url 'my_events' %}"><i class="bi bi-calendar-check me-2"></i>My Events</a></li>
+                        <li><a class="dropdown-item" href="{% url 'my_tickets' %}"><i class="bi bi-ticket-perforated me-2"></i>My Tickets</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{% url 'event_create' %}"><i class="bi bi-plus-circle me-2"></i>Post New Event</a></li>
+                        {% else %}
+                        <li><a class="dropdown-item" href="{% url 'my_tickets' %}"><i class="bi bi-ticket-perforated me-2"></i>My Tickets</a></li>
                         {% endif %}
                         {% endwith %}
                         <li><hr class="dropdown-divider"></li>
@@ -90,13 +180,53 @@
                     <a class="nav-link" href="{% url 'login' %}">Login</a>
                 </li>
                 <li class="nav-item">
-                    <a class="btn btn-warning btn-sm px-3 fw-semibold ms-2" href="{% url 'register' %}">Join Free</a>
+<a class="btn btn-sm px-3 fw-semibold ms-2 join-free-btn" style="color: white !important;" href="{% url 'register' %}">Join Free</a>                {% endif %}
+                <li class="nav-item">
+                    <button class="theme-toggle border-0" id="themeToggle" title="Toggle light/dark mode">
+                        <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+                    </button>
                 </li>
-                {% endif %}
             </ul>
+            {% endif %}
         </div>
     </div>
 </nav>
+
+<!-- Search & Filter Panel -->
+<div class="container mt-3" id="searchPanel" style="display: none;">
+    <div class="card shadow">
+        <div class="card-body">
+            <form id="navFilterForm" method="get" action="{% url 'event_list' %}">
+                <div class="row g-3">
+                    <div class="col-lg-5">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search events, cities, topics...">
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <select name="category" class="form-select">
+                            <option value="">All Categories</option>
+                            {% for val, label in categories %}
+                            <option value="{{ val }}" {% if category == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-lg-2">
+                        <select name="type" class="form-select">
+                            <option value="">All Events</option>
+                            <option value="live" {% if event_type == 'live' %}selected{% endif %}>Live Events</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary w-50">Filter</button>
+                        <button type="button" class="btn btn-secondary w-50" id="closeSearchBtn">Close</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 {% if messages %}
 <div class="container mt-3">
@@ -116,14 +246,19 @@
     <div class="container">
         <div class="row gy-4">
             <div class="col-lg-4">
-                <h5 class="fw-bold text-white mb-3"><i class="bi bi-calendar-event-fill me-2 text-warning"></i>EventSathi</h5>
+                <h5 class="fw-bold text-white mb-3 d-flex align-items-center">
+                    <img src="{% static 'images/logo.png' %}" alt="EventSathi" style="height: 32px; width: auto;" class="me-2">
+                    <span>Event-Sathi</span>
+                </h5>
                 <p class="text-secondary small">Your comprehensive digital companion for end-to-end event management. Connecting organizers, attendees, speakers, and sponsors.</p>
             </div>
             <div class="col-lg-2 col-6">
                 <h6 class="text-white fw-semibold mb-3">Explore</h6>
                 <ul class="list-unstyled small">
                     <li><a href="{% url 'event_list' %}" class="footer-link">Browse Events</a></li>
+                    {% if not user.is_authenticated or user.profile.role == 'organizer' %}
                     <li><a href="{% url 'event_create' %}" class="footer-link">Create Event</a></li>
+                    {% endif %}
                     <li><a href="{% url 'attendees_list' %}" class="footer-link">Attendees</a></li>
                 </ul>
             </div>
@@ -158,6 +293,29 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{% static 'js/main.js' %}"></script>
+<script>
+    // Toggle search panel
+    document.addEventListener('DOMContentLoaded', function() {
+        const desktopBtn = document.getElementById('desktopSearchBtn');
+        const mobileBtn = document.getElementById('mobileSearchBtn');
+        const searchPanel = document.getElementById('searchPanel');
+        const closeBtn = document.getElementById('closeSearchBtn');
+
+        // Show search panel
+        function showSearch() {
+            searchPanel.style.display = 'block';
+        }
+
+        // Hide search panel
+        function hideSearch() {
+            searchPanel.style.display = 'none';
+        }
+
+        if (desktopBtn) desktopBtn.addEventListener('click', showSearch);
+        if (mobileBtn) mobileBtn.addEventListener('click', showSearch);
+        if (closeBtn) closeBtn.addEventListener('click', hideSearch);
+    });
+</script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

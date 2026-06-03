@@ -14,14 +14,11 @@
             <div class="card p-3 manage-sidebar">
                 <nav class="nav flex-column gap-1">
                     <a class="nav-link" href="{% url 'event_manage' event.slug %}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
-                    <a class="nav-link" href="{% url 'manage_tickets' event.slug %}"><i class="bi bi-ticket me-2"></i>Ticket Tiers</a>
-                    <a class="nav-link" href="{% url 'manage_speakers' event.slug %}"><i class="bi bi-mic me-2"></i>Speakers</a>
-                    <a class="nav-link" href="{% url 'manage_sessions' event.slug %}"><i class="bi bi-list-check me-2"></i>Sessions</a>
-                    <a class="nav-link" href="{% url 'manage_sponsors' event.slug %}"><i class="bi bi-building me-2"></i>Sponsors</a>
-                    <a class="nav-link" href="{% url 'manage_announcements' event.slug %}"><i class="bi bi-megaphone me-2"></i>Announcements</a>
-                    <hr class="border-secondary">
+                    <a class="nav-link" href="{% url 'event_edit' event.slug %}"><i class="bi bi-pencil me-2"></i>Edit Event</a>
                     <a class="nav-link" href="{% url 'check_in' event.slug %}"><i class="bi bi-qr-code-scan me-2"></i>Check-In Portal</a>
                     <a class="nav-link active" href="{% url 'event_analytics' event.slug %}"><i class="bi bi-bar-chart-line me-2"></i>Analytics</a>
+                    <hr class="border-secondary">
+                    <a class="nav-link text-danger" href="{% url 'event_delete' event.slug %}"><i class="bi bi-trash3 me-2"></i>Delete Event</a>
                 </nav>
             </div>
         </div>
@@ -39,7 +36,7 @@
                 </div>
                 <div class="col-sm-4 col-6">
                     <div class="metric-card" style="border:1px solid rgba(245,158,11,0.3);">
-                        <div class="metric-value text-warning">₹{{ total_revenue|floatformat:0 }}</div>
+                        <div class="metric-value text-warning">Rs{{ total_revenue|floatformat:0 }}</div>
                         <div class="metric-label">Revenue</div>
                     </div>
                 </div>
@@ -106,10 +103,10 @@
                             {% for item in tier_data %}
                             <tr style="font-size:0.9rem;">
                                 <td class="fw-semibold">{{ item.tier.name }}</td>
-                                <td>{% if item.tier.price == 0 %}Free{% else %}₹{{ item.tier.price|floatformat:0 }}{% endif %}</td>
+                                <td>{% if item.tier.price == 0 %}Free{% else %}Rs{{ item.tier.price|floatformat:0 }}{% endif %}</td>
                                 <td>{{ item.tier.capacity }}</td>
                                 <td>{{ item.sold }}</td>
-                                <td class="text-warning">{% if item.revenue > 0 %}₹{{ item.revenue|floatformat:0 }}{% else %}—{% endif %}</td>
+                                <td class="text-warning">{% if item.revenue > 0 %}Rs{{ item.revenue|floatformat:0 }}{% else %}—{% endif %}</td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="progress flex-grow-1" style="height:6px;">

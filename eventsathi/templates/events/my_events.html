@@ -126,7 +126,7 @@
                                 <div class="metric-label" style="font-size:0.75rem;">Ticket Tier</div>
                             </div>
                             <div class="metric-card flex-fill" style="padding:0.8rem;">
-                                <div class="metric-value fs-6">{% if reg.amount_paid == 0 %}Free{% else %}₹{{ reg.amount_paid|floatformat:0 }}{% endif %}</div>
+                                <div class="metric-value fs-6">{% if reg.amount_paid == 0 %}Free{% else %}Rs{{ reg.amount_paid|floatformat:0 }}{% endif %}</div>
                                 <div class="metric-label" style="font-size:0.75rem;">Paid</div>
                             </div>
                             <div class="metric-card flex-fill" style="padding:0.8rem;">
@@ -140,9 +140,6 @@
                             </a>
                             <a href="{% url 'view_ticket' reg.ticket_id %}" class="btn btn-sm btn-primary">
                                 <i class="bi bi-qr-code me-2"></i>My Ticket
-                            </a>
-                            <a href="{% url 'event_agenda' reg.event.slug %}" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-list-check me-1"></i>Agenda
                             </a>
                         </div>
                     </div>

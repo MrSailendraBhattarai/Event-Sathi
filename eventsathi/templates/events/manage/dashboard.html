@@ -10,9 +10,14 @@
                 <h3 class="fw-bold mb-0">{{ event.title }}</h3>
                 <small class="text-muted">Organizer Dashboard · {{ event.start_date|date:"d M Y" }}</small>
             </div>
-            <a href="{% url 'event_detail' event.slug %}" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-eye me-1"></i>Preview Event
-            </a>
+            <div class="d-flex gap-2">
+                <a href="{% url 'event_edit' event.slug %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-pencil me-1"></i>Edit Event
+                </a>
+                <a href="{% url 'event_detail' event.slug %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-eye me-1"></i>Preview Event
+                </a>
+            </div>
         </div>
     </div>
 </div>
@@ -24,14 +29,11 @@
             <div class="card p-3 manage-sidebar">
                 <nav class="nav flex-column gap-1">
                     <a class="nav-link active" href="{% url 'event_manage' event.slug %}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
-                    <a class="nav-link" href="{% url 'manage_tickets' event.slug %}"><i class="bi bi-ticket me-2"></i>Ticket Tiers</a>
-                    <a class="nav-link" href="{% url 'manage_speakers' event.slug %}"><i class="bi bi-mic me-2"></i>Speakers</a>
-                    <a class="nav-link" href="{% url 'manage_sessions' event.slug %}"><i class="bi bi-list-check me-2"></i>Sessions</a>
-                    <a class="nav-link" href="{% url 'manage_sponsors' event.slug %}"><i class="bi bi-building me-2"></i>Sponsors</a>
-                    <a class="nav-link" href="{% url 'manage_announcements' event.slug %}"><i class="bi bi-megaphone me-2"></i>Announcements</a>
-                    <hr class="border-secondary">
+                    <a class="nav-link" href="{% url 'event_edit' event.slug %}"><i class="bi bi-pencil me-2"></i>Edit Event</a>
                     <a class="nav-link" href="{% url 'check_in' event.slug %}"><i class="bi bi-qr-code-scan me-2"></i>Check-In Portal</a>
                     <a class="nav-link" href="{% url 'event_analytics' event.slug %}"><i class="bi bi-bar-chart-line me-2"></i>Analytics</a>
+                    <hr class="border-secondary">
+                    <a class="nav-link text-danger" href="{% url 'event_delete' event.slug %}"><i class="bi bi-trash3 me-2"></i>Delete Event</a>
                 </nav>
             </div>
         </div>
@@ -54,7 +56,7 @@
                 </div>
                 <div class="col-sm-4">
                     <div class="metric-card">
-                        <div class="metric-value">₹{{ total_revenue|floatformat:0 }}</div>
+                        <div class="metric-value">Rs{{ total_revenue|floatformat:0 }}</div>
                         <div class="metric-label">Revenue</div>
                     </div>
                 </div>
@@ -88,32 +90,6 @@
                         </div>
                     </a>
                 </div>
-                <div class="col-sm-6">
-                    <a href="{% url 'manage_announcements' event.slug %}" class="card p-4 d-block text-decoration-none">
-                        <div class="d-flex align-items-center gap-3">
-                            <div style="width:48px;height:48px;background:rgba(108,61,225,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;">
-                                <i class="bi bi-megaphone fs-4" style="color:#a78bfa;"></i>
-                            </div>
-                            <div>
-                                <div class="fw-bold text-white">Announcement</div>
-                                <small class="text-muted">Broadcast to attendees</small>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-sm-6">
-                    <a href="{% url 'manage_sessions' event.slug %}" class="card p-4 d-block text-decoration-none">
-                        <div class="d-flex align-items-center gap-3">
-                            <div style="width:48px;height:48px;background:rgba(59,130,246,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;">
-                                <i class="bi bi-list-check fs-4 text-primary"></i>
-                            </div>
-                            <div>
-                                <div class="fw-bold text-white">Add Session</div>
-                                <small class="text-muted">Build your agenda</small>
-                            </div>
-                        </div>
-                    </a>
-                </div>
             </div>
 
             <!-- Registrations Table -->
@@ -136,7 +112,7 @@
                                 <td class="text-muted">{{ reg.ticket_id }}</td>
                                 <td>{{ reg.user.get_full_name|default:reg.user.username }}</td>
                                 <td>{{ reg.ticket_tier.name }}</td>
-                                <td>{% if reg.amount_paid == 0 %}Free{% else %}₹{{ reg.amount_paid|floatformat:0 }}{% endif %}</td>
+                                <td>{% if reg.amount_paid == 0 %}Free{% else %}Rs{{ reg.amount_paid|floatformat:0 }}{% endif %}</td>
                                 <td><span class="badge badge-status-{{ reg.status }}">{{ reg.get_status_display }}</span></td>
                             </tr>
                             {% endfor %}
